@@ -1,31 +1,22 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using academico.Models;
+using academico.Repositories;
+using System.Threading.Tasks;
 
 namespace academico.Controllers
 {
     public class AlunoController : Controller
     {
-        private static List<Aluno> alunos = new List<Aluno>()
+        private readonly IAlunoRepository _alunoRepository;
+        public AlunoController(IAlunoRepository repository)
         {
-            new Aluno()
-            {
-                AlunoId = 1,
-                Nome = "Aluno Teste",
-                Email = "aluno@mail.com",
-                Telefone = "(24)99999-9999",
-                Endereco = "Rua X, numero 1000",
-                Complemento = "apto 101",
-                Bairro = "Bairro do aluno",
-                Municipio = "Cidade do aluno",
-                Uf = "RJ",
-                Cep = "271000-000"
-            }
-        };
+            _alunoRepository = repository ?? throw new ArgumentNullException(nameof(repository));
+        }
 
 
         public IActionResult Create()
         {
-            return View();
+            return View(new Aluno());
         }
 
         [HttpPost]
@@ -34,12 +25,13 @@ namespace academico.Controllers
         {
             try
             {
-                if (ModelState.IsValid)
+                if (!ModelState.IsValid)
                 {
-                    aluno.AlunoId = alunos.Select(a => a.AlunoId).DefaultIfEmpty(0).Max()+1;
-                    alunos.Add(aluno);
-                    return RedirectToAction(nameof(Index));
+                    return View(aluno);
                 }
+                await _alunoRepository.Create(aluno);
+                return RedirectToAction(nameof(Index));
+
             }catch (Exception ex)
             {
                 ModelState.AddModelError(string.Empty, $"Ocorreu um erro ao criar o aluno: {ex.Message}");
@@ -48,14 +40,15 @@ namespace academico.Controllers
         }
 
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            var alunos = await _alunoRepository.GetAll();
             return View(alunos);
         }
 
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var aluno = alunos.FirstOrDefault(a => a.AlunoId == id);
+            var aluno = await _alunoRepository.GetId(id);
             if (aluno == null)
                 return NotFound();
 
@@ -64,78 +57,44 @@ namespace academico.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, [Bind("AlunoId, Nome, Email, Telefone, Endereco, Complemento, Bairro, Municipio, Uf, Cep")] Aluno aluno)
+        public async Task<IActionResult> Edit(int id, Aluno aluno)
         {
-            try
+            if(id != aluno.AlunoId)
             {
-                if (id != aluno.AlunoId)
-                    return NotFound();
-
-                if (ModelState.IsValid)
-                {
-                    var existingAluno = alunos.FirstOrDefault(a => a.AlunoId == id);
-                    if (existingAluno == null)
-                        return NotFound();
-
-                    existingAluno.AlunoId = aluno.AlunoId;
-                    existingAluno.Nome = aluno.Nome;
-                    existingAluno.Email = aluno.Email;
-                    existingAluno.Telefone = aluno.Telefone;
-                    existingAluno.Endereco = aluno.Endereco;
-                    existingAluno.Complemento = aluno.Complemento;
-                    existingAluno.Municipio = aluno.Municipio;
-                    existingAluno.Uf = aluno.Uf;
-                    existingAluno.Cep = aluno.Cep;
-                                        
-                    return RedirectToAction("Index");
-                }
+                return BadRequest();
             }
-            catch (Exception ex)
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError(string.Empty, $"Ocorreu um erro ao atualizar o aluno: {ex.Message}");
+                return View(aluno);
             }
+            await _alunoRepository.Edit(aluno);
+            return RedirectToAction(nameof(Index));
+        }
+
+        public async Task<IActionResult> Details(int id)
+        {
+            var aluno = await _alunoRepository.GetId(id);
+            if (aluno == null)
+                return NotFound();
+
             return View(aluno);
         }
 
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var aluno = alunos.FirstOrDefault(a => a.AlunoId == id);
+            var aluno = await _alunoRepository.GetId(id);
             if (aluno == null)
-            {
                 return NotFound();
-            }
-            return View(aluno);
-        }
 
-        public IActionResult Delete(int id)
-        {
-            var aluno = alunos.FirstOrDefault(a => a.AlunoId == id);
-            if (aluno == null)
-            {
-                return NotFound();
-            }
             return View(aluno);
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            try
-            {
-                var aluno = alunos.FirstOrDefault(a => a.AlunoId == id);
-                if (aluno == null)
-                    return NotFound();
-
-                alunos.Remove(aluno);
-                return RedirectToAction("Index");
-
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError(string.Empty, $"Ocorreu um erro ao excluir o aluno: {ex.Message}");
-            }
-            return View(alunos);
+            await _alunoRepository.Delete(id);
+            return RedirectToAction(nameof(Index));
         }
 
     }
