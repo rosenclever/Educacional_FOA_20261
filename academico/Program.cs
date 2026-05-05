@@ -1,4 +1,6 @@
+using academico.Data;
 using academico.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddSingleton<IAlunoRepository, InMemoryRepository>();
+
+var connectionString = builder.Configuration.GetConnectionString("AcademicoDbConnection");
+builder.Services.AddDbContext<AcademicoContext>(option => option.UseSqlServer(connectionString));
 
 var app = builder.Build();
 
