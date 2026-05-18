@@ -1,6 +1,68 @@
-﻿namespace academico.Repositories
+﻿using academico.Data;
+using academico.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
+
+namespace academico.Repositories
 {
-    public class AlunoRepositoryEF
+    public class AlunoRepositoryEF : IAlunoRepository
     {
+        private readonly AcademicoContext _context;
+
+        public AlunoRepositoryEF(AcademicoContext context)
+        {
+            _context = context;
+        }
+
+        public async Task Create(Aluno aluno, CancellationToken cancellationToken = default)
+        {
+            _context.Alunos.Add(aluno);
+            _context.SaveChanges();
+        }
+
+        public Task Delete(int id, CancellationToken cancelationToken = default)
+        {
+            var aluno = _context.Alunos.Find(id);
+            if (aluno == null)
+            {
+                throw new Exception();
+            }
+            _context.Alunos.Remove(aluno);
+            _context.SaveChanges();
+            return Task.CompletedTask;
+        }
+
+        public Task Edit(Aluno aluno, CancellationToken cancellationToken = default)
+        {
+            _context.Alunos.Update(aluno);
+            _context.SaveChanges();
+            return Task.CompletedTask;
+        }
+
+        public Task<bool> Exists(int id, CancellationToken cancelationToken = default)
+        {
+            var aluno = _context.Alunos.Find(id);
+            if (aluno == null)
+            {
+                return Task.FromResult(false);
+            }
+            return Task.FromResult(true);
+        }
+
+        public async Task<IEnumerable<Aluno>> GetAll(CancellationToken cancelationToken = default)
+        {
+            var alunos = _context.Alunos.ToListAsync();
+            return await alunos;
+        }
+
+        public async Task<Aluno> GetId(int Id, CancellationToken cancelationToken = default)
+        {
+            var aluno = _context.Alunos.Find(Id);
+            if(aluno == null)
+            {
+                throw new Exception();
+            }
+            return aluno;
+        }
     }
 }
