@@ -10,6 +10,7 @@ namespace academico.Data
         }
 
         public DbSet<Aluno> Alunos { get; set; }
+        public DbSet<Professor> Professores { get; set; }
 
     }
 }

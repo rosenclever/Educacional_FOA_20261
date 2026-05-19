@@ -7,10 +7,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddSingleton<IAlunoRepository, InMemoryRepository>();
+var AcademicoConnectionString = builder.Configuration.GetConnectionString("AcademicoDbConnection");
+builder.Services.AddDbContext<AcademicoContext>(options => options.UseSqlServer(AcademicoConnectionString));
 
-var connectionString = builder.Configuration.GetConnectionString("AcademicoDbConnection");
-builder.Services.AddDbContext<AcademicoContext>(option => option.UseSqlServer(connectionString));
+builder.Services.AddSingleton<IAlunoRepository, InMemoryRepository>();
 
 var app = builder.Build();
 
